@@ -1,10 +1,14 @@
 import cv2
 import glob
-
+import math
 import numpy as np
 
 path = './*.png'
 def conversion(img1,img2):
+	'''
+	This function converts (normal data img2-noise amplified data from img1)
+	and then returns img2
+	'''
 	x1,y1 = img1.shape
 #	print(img1.shape)
 #	input()
@@ -17,6 +21,31 @@ def conversion(img1,img2):
 			except Exception as e:
 				print(i,j,e)
 	return img2
+	
+def nms(lines):
+	'''
+	This function converts lines with similarities in location to null points
+	and returns only the required ones
+	'''
+	l1=lines
+	i=0
+	for l in lines:
+		x1,y1,x2,y2=l[0]
+		d1=math.sqrt((x2-x1)**2+(y2-y1)**2)
+		for j in range(i,len(l1)):
+			m1,n1,m2,n2=l1[j][0]
+			d2=math.sqrt((m2-m1)**2+(n2-n1)**2)
+			if (y1-25<n1<y1+25) and (y2-25<n2<y2+25):
+				m1,n1,m2,n2 = x1, int((y1+n1)/2), x2, int((y2+n2)/2)
+				l1[j][0] = [m1,n1,m2,n2]
+			elif (x1-25<m1<x1+25) and (x2-25<m2<x2+25):
+				m1,n1,m2,n2 = int((x1+m1)/2),n1,int((x2+m2)/2),n2
+				l1[j][0] = [m1,n1,m2,n2]
+			else:
+				pass
+		i+=1
+	return l1
+		
 
 for i in glob.glob(path):
 	a=cv2.imread(i)
@@ -31,6 +60,7 @@ for i in glob.glob(path):
 	black_img = np.ones(shape = cv2.imread(i,0).shape,dtype = np.uint8)
 #	cv2.imshow('black',black_img)
 	#add lines in it
+	#lines = nms(lines)
 	if lines is not None:
 	    for line in lines:
 #	    	print(line)
@@ -60,6 +90,7 @@ for i in glob.glob(path):
 	lines = cv2.HoughLinesP(edge, 1, np.pi / 180, 50, minLineLength=100, maxLineGap=20)
 
 	# Draw the lines on the original image
+	lines = nms(lines)
 	if lines is not None:
 	    for line in lines:
 #	    	print(line)
